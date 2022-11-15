@@ -1,13 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EF_Console.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EF_Console
 {
     public class AppContext : DbContext
     {
+        //Объекты таблицы Users
         public DbSet<User> Users { get; set; }
+
+        //Объекты таблицы Companies
+        public DbSet<Company> Companies { get; set; }
 
         public AppContext()
         {
+            //Удаление модели БД
+            Database.EnsureDeleted();
+            //Создание модели БД
             Database.EnsureCreated();
         }
 
