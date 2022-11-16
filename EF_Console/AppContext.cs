@@ -11,13 +11,14 @@ namespace EF_Console
         //Объекты таблицы Companies
         public DbSet<Company> Companies { get; set; }
 
-        public AppContext()
-        {
-            //Удаление модели БД
-            Database.EnsureDeleted();
-            //Создание модели БД
-            Database.EnsureCreated();
-        }
+        //LINQ To Entities
+        //public AppContext()
+        //{
+        //    //Удаление модели БД
+        //    Database.EnsureDeleted();
+        //    //Создание модели БД
+        //    Database.EnsureCreated();
+        //}
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

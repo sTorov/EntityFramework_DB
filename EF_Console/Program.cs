@@ -1,4 +1,5 @@
 ﻿using EF_Console.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace EF_Console
 {
@@ -134,6 +135,105 @@ namespace EF_Console
                 //db.SaveChanges();
                 #endregion
             }
+
+            //LINQ To Entities
+
+            #region LINQ
+
+            //Контекст для добавления данных
+            using (var db = new AppContext())
+            {
+                //Пересоздаём базу
+                db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+
+                // Заполняем данными
+                var company1 = new Company { Name = "SF" };
+                var company2 = new Company { Name = "VK" };
+                var company3 = new Company { Name = "FB" };
+
+                db.Companies.AddRange(company1, company2, company3);
+
+                var user1 = new User { Name = "Arthur", Role = "Admin", Company = company1 };
+                var user2 = new User { Name = "Bob", Role = "Admin", Company = company2 };
+                var user3 = new User { Name = "Clark", Role = "User", Company = company2 };
+                var user4 = new User { Name = "Dan", Role = "User", Company = company3 };
+
+                db.Users.AddRange(user1, user2, user3, user4);
+
+                db.SaveChanges();
+            }
+
+            //Контекст для выбора данных
+            using(var db = new AppContext())
+            {
+                var usersQuery = from user in db.Users/*.Include(u => u.Company)*/      //Company = null т.к. выборка идёт из БД
+                                 where user.CompanyId == 2                              //столбца Company там нет
+                                 select user;
+                //или
+                var example = db.Users/*.Include(u => u.Company)*/                      //Company = null
+                    .Where(u => u.CompanyId == 2);
+                //или
+                var example2 = db.Users.Include(u => u.Company)                         //Company != null
+                    .Where(u => u.Company.Id == 2);
+                //или
+                var example3 = db.Users.Include(u => u.Company)                         //Company != null
+                    .Where(u => u.Company.Name == "VK");
+
+
+
+                var users = usersQuery.ToList();    //Без Include() свойство Company равно null
+
+                foreach(var user in users)
+                    Console.WriteLine(user.Id + "\t" + user.CompanyId);
+
+
+
+                //Скринкаст
+                var selectedCompany = db.Users.Select(u => u.Company);
+
+                var firstUser = db.Users.First();
+                                
+                //1 параметр - множество для объединения
+                //2 и 3 - значения для объединения таблиц (2 из 1-ой, 3 из 2-ой)
+                //4 - Select (Значения, которые попадут в итоговую выборку)
+                var joinedCompanies = db.Users
+                    .Join(db.Companies, 
+                    u => u.CompanyId, 
+                    c => c.Id,
+                    (p, c) => new { CompanyName = c.Name });
+
+                var sumCompanies = db.Users.Sum(u => u.CompanyId);
+
+                Console.ReadKey();
+
+
+
+                //IEnumerable and IQueryable
+
+
+                //IQueryable - выполняется в БД, оптимизируется, дольше, но использует меньше памяти и трафика - перемещается вперёд-назад.
+                //Выполняется при первом обращении к элементу выборки
+
+                //IEnumerable - выполняется у клиента, быстрее, но использует больше ресерсов - перемещается только вперёд. Выполняется немедленно.
+
+                //В БД передан запрос   SELECT * FROM dbo.Users
+                //На клиетской части произошла сортировка
+                var query1 = db.Users
+                    .ToList()                       // Выполняет запрос
+                    .Where(u => u.Role == "Admin"); // Фильтрует
+
+                //В БД передан запрос   SELECT * FROM dbo.Users u WHERE u.Role = 'Admin'
+                //Сортировка на стороне БД
+                //Предпочтительный вариант
+                var query2 = db.Users
+                    .Where(u => u.Role == "Admin")  // Фильтрует
+                    .ToList();
+
+                //т.о. запрос для БД формируется до преобразования IQueryable в IEnumerable (.ToList())
+            }
+
+            #endregion
         }
     }
 }
