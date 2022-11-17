@@ -18,8 +18,29 @@ namespace EF_Console
             //    db.SaveChanges();
             }
 
+            #region IDENTITY_INSERT
+            //Перед добавление записи и выключение автогенерации значений, необходимо убедиться в том, что всё находится в одной транзакции
+            static void Method()
+            {
+                using (var db = new AppContext())
+                {
+                    using (var trans = db.Database.BeginTransaction())
+                    {
+                        var user = new User { Id = 99, Email = "test", Name = "Test" };
+                        db.Users.Add(user);
+
+                        db.Database.ExecuteSqlInterpolated($"set identity_insert dbo.Users on;");
+                        db.SaveChanges();
+                        db.Database.ExecuteSqlInterpolated($"set identity_insert dbo.Users off;");
+
+                        trans.Commit();
+                    }
+                }
+            }
+            #endregion
+
             //CRUD
-            using(var db = new AppContext())
+            using (var db = new AppContext())
             {
                 //var user3 = new User { Name = "Alice", Role = "User"/*, Id = 3*/ };
                 //var user4 = new User { Name = "Bob", Role = "User" };
